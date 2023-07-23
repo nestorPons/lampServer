@@ -1,13 +1,13 @@
 version: "3.1"
 services:
-    mysql:
+    db:
         image: mysql
+        container_name: MySQL
         ports: 
             - "3306:3306"
-        command: --default-authentication-plugin=mysql_native_password
         environment:
             MYSQL_DATABASE: mydb
-            MYSQL_USER: root
+            MYSQL_USER: user
             MYSQL_PASSWORD: test
             MYSQL_ROOT_PASSWORD: test 
         volumes:
@@ -16,7 +16,8 @@ services:
             - persistent:/var/lib/mysql
         networks:
             - default
-    www:
+    php:
+        container_name: PHP
         build: .
         ports: 
             - "80:80"
@@ -27,24 +28,27 @@ services:
             - ./conf/000-default.conf:/etc/apache2/sites-available/000-default.conf
             - ./logs/error.log:/usr/local/apache2/logs/error.log
             - ./logs/access.log:/usr/local/apache2/logs/access.log
+        links:
+            - db
         networks:
             - default
-        depends_on:
-            - mysql
     phpmyadmin:
+        container_name: PHPMyAdmin
         image: phpmyadmin/phpmyadmin
         ports:
             - 8080:80
         environment:
+            PMA_HOST: db
+            PMA_PORT: 3306
             MYSQL_USER: root
             MYSQL_PASSWORD: test
             MYSQL_ROOT_PASSWORD: test
             UPLOAD_LIMIT: 300M
+        depends_on:
+            - db
         networks:
             - default
-        depends_on:
-            - mysql
-volumes:
-    persistent:
 networks:
     default:
+volumes:
+    persistent:
