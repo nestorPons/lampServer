@@ -1,54 +1,60 @@
-version: "3.1"
+version: "3.8"
 services:
-    db:
-        image: mysql
-        container_name: MySQL
-        ports: 
-            - "3306:3306"
-        environment:
-            MYSQL_DATABASE: mydb
-            MYSQL_USER: user
-            MYSQL_PASSWORD: test
-            MYSQL_ROOT_PASSWORD: test 
-        volumes:
-            - ./dump:/docker-entrypoint-initdb.d
-            - ./conf:/etc/mysql/conf.d
-            - persistent:/var/lib/mysql
-        networks:
-            - default
-    php:
-        container_name: PHP
-        build: .
-        ports: 
-            - "80:80"
-        volumes:
-            - ./..:/var/www/html/
-            - ./conf/php.ini:/usr/local/etc/php/php.ini
-            - ./conf/apache2.conf:/etc/apache2/apache2.conf
-            - ./conf/000-default.conf:/etc/apache2/sites-available/000-default.conf
-            - ./logs/error.log:/usr/local/apache2/logs/error.log
-            - ./logs/access.log:/usr/local/apache2/logs/access.log
-        links:
-            - db
-        networks:
-            - default
-    phpmyadmin:
-        container_name: PHPMyAdmin
-        image: phpmyadmin/phpmyadmin
-        ports:
-            - 8080:80
-        environment:
-            PMA_HOST: db
-            PMA_PORT: 3306
-            MYSQL_USER: root
-            MYSQL_PASSWORD: test
-            MYSQL_ROOT_PASSWORD: test
-            UPLOAD_LIMIT: 300M
-        depends_on:
-            - db
-        networks:
-            - default
-networks:
-    default:
+  db:
+    container_name: MySQL
+    image: mysql
+    ports:
+      - "3306:3306"
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_DATABASE: mydb
+      MYSQL_USER: user
+      MYSQL_PASSWORD: test
+      MYSQL_ROOT_PASSWORD: test
+    volumes:
+      - ./dump:/docker-entrypoint-initdb.d
+      - ./conf:/etc/mysql/conf.d
+      - persistent:/var/lib/mysql
+    networks:
+      - default
+  www:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    mem_limit: 2g
+    ports:
+      - "8888:80"
+    volumes:
+      - ./..:/var/www/html/
+      - ./conf/php.ini:/usr/local/etc/php/php.ini
+      - ./conf/apache2.conf:/etc/apache2/apache2.conf
+      - ./conf/000-default.conf:/etc/apache2/sites-available/000-default.conf
+      - ./logs/error.log:/usr/local/apache2/logs/error.log
+      - ./logs/access.log:/usr/local/apache2/logs/access.log
+    links:
+      - db
+    networks:
+      - default
+    depends_on:
+      - db
+    environment:
+      SYMFONY_DATABASE_URL: "mysql://root:test@db:3306/database"
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    links:
+      - db:db
+    ports:
+      - 8080:80
+    environment:
+      MYSQL_USER: root
+      MYSQL_PASSWORD: test
+      MYSQL_ROOT_PASSWORD: test
+      UPLOAD_LIMIT: 300M
+    depends_on:
+      - db
+      - www
 volumes:
-    persistent:
+  persistent:
+  postgres_data:
+networks:
+  default:
