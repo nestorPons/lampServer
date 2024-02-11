@@ -22,7 +22,7 @@ RUN docker-php-ext-install intl
 RUN docker-php-ext-install mysqli 
 RUN docker-php-ext-install iconv
 RUN docker-php-ext-install bcmath
-
+RUN docker-php-ext-install php-mysql
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 RUN a2enmod rewrite
 WORKDIR /var/www/html
